@@ -6,10 +6,11 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var mongoose = require('mongoose')
+require('./models/Game.js')
+require('./models/Player.js')
 mongoose.connect('mongodb://localhost/foospal') 
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
+var games = require('./routes/games.js');
 
 var app = express();
 
@@ -25,8 +26,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
+app.use('/api/games', games);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
