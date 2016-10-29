@@ -5,12 +5,13 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var mongoose = require('mongoose')
-require('./models/Game.js')
-require('./models/Player.js')
-mongoose.connect('mongodb://localhost/foospal') 
+var mongoose = require('mongoose');
+require('./models/Game.js');
+require('./models/Player.js');
+mongoose.connect('mongodb://localhost/foospal');
 
 var games = require('./routes/games.js');
+var players = require('./routes/players.js');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/games', games);
+app.use('/api/players', players);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
