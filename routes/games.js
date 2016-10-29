@@ -16,8 +16,7 @@ router.post('/', function (req, res, next){
     //TODO: error handling
     game.save().then(function(game) {
         console.log('Saving new game successfull');
-        //TODO: send game back to client (has an id now)
-        res.sendStatus(200)
+        res.json(game)
     }, function(err) {
         console.log('An error occured while saving the new game');
     })
