@@ -7,7 +7,7 @@ var Game = mongoose.model('Game');
 // Get list of games
 router.get('/', function(req, res, next) {
     console.log('get games');
-    res.sendStatus(200)
+    res.sendStatus(200);
 });
 
 router.post('/', function (req, res, next){
