@@ -22,7 +22,8 @@ router.post('/', function (req, res, next){
         res.json(game)
     }, function(err) {
         console.log('An error occured while saving the new game');
-    })
+        res.status(500)
+    });
 });
 
 module.exports = router;
