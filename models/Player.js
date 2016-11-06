@@ -8,13 +8,6 @@ var playerSchema = new Schema({
 
 playerSchema.methods.rename = function (newName) {
     this.name = newName;
-    console.log('rename was called with name ' + newName);
-};
-
-playerSchema.methods.test = function () {
-    console.log('test method start');
-    console.log('name:' + this.name);
-    console.log('test method end');
 };
 
 var Player = mongoose.model('Player', playerSchema);
