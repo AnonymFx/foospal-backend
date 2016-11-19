@@ -10,7 +10,7 @@ router.get('/', function(req, res, next) {
     res.sendStatus(200);
 });
 
-router.post('/', function (req, res, next){
+router.put('/', function (req, res, next){
     var game = new Game(req.body);
     /*TODO: error handling
      * Find tournament and check if the scores fit
