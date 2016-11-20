@@ -5,7 +5,16 @@ var mongoose = require('mongoose');
 var Game = mongoose.model('Game');
 
 // Get list of games
-router.get('/', function(req, res, next) {
+router.post('/:gameId', function(req, res, next) {
+    //TODO check game for validity (max score regarding tournament)
+    var gameId = req.params.gameId;
+    Game.findById(gameId).exec()
+        .then(function(game) {
+            console.log("update game");
+        })
+        .catch(function(error) {
+            console.log("error while updating game");
+        });
     console.log('get games');
     res.sendStatus(200);
 });
