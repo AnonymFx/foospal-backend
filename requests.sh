@@ -15,6 +15,9 @@ case "$1" in
     putGame )
         put_game
         ;;
+    all )
+        put_game
+        ;;
     * )
         echo "invalid argument: $1"
         ;;
