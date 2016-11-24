@@ -6,11 +6,23 @@ var Game = mongoose.model('Game');
 
 // Get list of games
 router.post('/:gameId', function(req, res, next) {
-    //TODO check game for validity (max score regarding tournament)
     var gameId = req.params.gameId;
+    console.log(req.body);
+    var newGame = new Game(req.body);
     Game.findById(gameId).exec()
         .then(function(game) {
-            console.log("update game");
+            // TODO: is this doable in a nicer way?
+            if (newGame.maxScore && newGame.maxScore != game.maxScore) {
+                console.log("updating max score");
+                game.maxScore = newGame.maxScore;
+            } else if (newGame.socre1 && newGame.score1 != game.score1) {
+                console.log("updating score1");
+                game.score1 = newGame.score1;
+            } else if (newGame.score2 && newGame.socre2 != game.score2) {
+                console.log("updating score2");
+                game.score2 = newGame.score2;
+            }
+            console.log(game);
         })
         .catch(function(error) {
             console.log("error while updating game");
@@ -19,7 +31,8 @@ router.post('/:gameId', function(req, res, next) {
     res.sendStatus(200);
 });
 
-router.put('/', function (req, res, next){
+router.put('/', function(req, res, next) {
+    console.log(req.body);
     var game = new Game(req.body);
     /*TODO: error handling
      * Find tournament and check if the scores fit
