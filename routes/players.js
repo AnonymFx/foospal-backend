@@ -6,54 +6,27 @@ var Player = mongoose.model('Player');
 
 router.post('/add', function (req, res, next) {
     var player = new Player(req.body);
-    /* TODO: error handling and validation (see post playerid as template)*/
-    player.save().then(function (player) {
-        console.log('POST successful: Saving player (ID = ' + player._id + ', Name = ' + player.name + ', ELO = ' + player.elo + ')');
-        res.json(player);
-    }, function (err) {
-        console.log('POST failed: Could not save player ' + player.name + '; internal error: ' + err);
-        res.status(500);
-        res.send();
-    });
-});
-
-router.post('/:playerid', function (req, res, next) {
-    var playerId = req.params.playerid;
-    var name = req.body.name;
-    var elo = req.body.elo;
-    var validationResult = validatePostPlayerRequest(name, elo, playerId);
-    if (validationResult.valid === false) {
+    var validationResult = validatePostNewPlayerRequest(player.name, player.elo);
+    if (!validationResult.valid) {
         respondWithHttpError(res, 400, validationResult.errormsg);
-    }
-    Player.findById(playerId).exec()
-        .then(function (player) {
-            if (player == null) {
-                respondWithHttpError(res, 400, "POST failed: no player with requested id available");
-            } else {
-                player.name = name;
-                player.elo = elo;
-                player.save();
-                console.log('POST successful: updated player successful (Name = ' + name + ', ELO = ' + elo + ')');
-                res.json(player);
-            }
-        })
-        .catch(function (err) {
-            // error handling
-            console.log('POST failed: Could not update player with id ' + playerId + '; internal error:' + err);
+    } else {
+        player.save().then(function (player) {
+            console.log('POST successful: Saving player (ID = ' + player._id + ', Name = ' + player.name + ', ELO = ' + player.elo + ')');
+            res.json(player);
+        }).catch(function (err) {
+            console.log('POST failed: Could not save player ' + player.name, err);
             res.status(500).send();
         });
+    }
 });
 
-function validatePostPlayerRequest(name, elo, playerid) {
+function validatePostNewPlayerRequest(name, elo) {
     var validationErrorMsg = '';
     if (typeof name !== 'string') {
         validationErrorMsg += ' "name" is not a string;';
     }
     if (typeof elo !== 'number') {
         validationErrorMsg += ' "elo" is not a number;';
-    }
-    if (!isObjectIdValid(playerid)) {
-        validationErrorMsg += ' playerid is not an ObjectId';
     }
     if (validationErrorMsg !== '') {
         return {
@@ -65,34 +38,104 @@ function validatePostPlayerRequest(name, elo, playerid) {
     }
 }
 
-router.get('/:playerid', function (req, res, next) {
-    var playerid = req.params.playerid;
-    // TODO: refactor validation (see post playerid as template)
-    if (!isObjectIdValid(playerid)) {
-        respondWithHttpError(res, 400, 'GET failed: malformed id');
+router.post('/:playerId', function (req, res, next) {
+    var playerId = req.params.playerId;
+    var name = req.body.name;
+    var elo = req.body.elo;
+    var validationResult = validatePostPlayerRequest(name, elo, playerId);
+    if (!validationResult.valid) {
+        respondWithHttpError(res, 400, validationResult.errormsg);
     } else {
-        Player.findById(playerid).exec()
+        Player.findById(playerId).exec()
             .then(function (player) {
                 if (player == null) {
-                    respondWithHttpError(res, 404, "GET failed: no player with requested id available");
+                    respondWithHttpError(res, 404, "POST failed: no player with requested id available");
                 } else {
-                    console.log('GET successful: returning player with id ' + playerid);
+                    // name is optional
+                    if (name !== undefined) {
+                        player.name = name;
+                    }
+                    // elo is optional
+                    if (elo !== undefined) {
+                        player.elo = elo;
+                    }
+                    player.save();
+                    console.log('POST successful: updated player successful (Name = ' + name + ', ELO = ' + elo + ')');
                     res.json(player);
                 }
             })
             .catch(function (err) {
-                respondWithHttpError(res, 500, 'GET failed: Could not find player with id ' + playerid + ';internal error', err);
+                respondWithHttpError(res, 500, 'POST failed: Could not update player with id ' + playerId, err);
             });
     }
 });
 
-router.get('/page/:pageindex', function (req, res, next) {
-    var pageindex = req.params.pageindex;
-    // TODO: refactor validation (see post playerid as template)
-    if (typeof pageindex !== 'number') {
-        respondWithHttpError(res, 404, "GET failed: pageindex not a number");
+function validatePostPlayerRequest(name, elo, playerId) {
+    var validationErrorMsg = '';
+    if (name !== undefined && typeof name !== 'string') {
+        validationErrorMsg += ' "name" is not a string;';
+    }
+    // elo is optional, check for existence first
+    if (elo !== undefined && typeof elo !== 'number') {
+        validationErrorMsg += ' "elo" is not a number;';
+    }
+    if (!isObjectIdValid(playerId)) {
+        validationErrorMsg += ' playerId is not an ObjectId';
+    }
+    if (validationErrorMsg !== '') {
+        return {
+            valid: false,
+            errormsg: 'POST failed: Validation error - malformed request:' + validationErrorMsg
+        };
     } else {
-        // TODO: implement returning just a subset of players, currently all players are returned regardless of the pageindex
+        return {valid: true};
+    }
+}
+
+router.get('/:playerId', function (req, res, next) {
+    var playerId = req.params.playerId;
+    var validationResult = validateGetPlayerRequest(playerId);
+    if (!validationResult.valid) {
+        respondWithHttpError(res, 400, validationResult.errormsg);
+    } else {
+        Player.findById(playerId).exec()
+            .then(function (player) {
+                if (player == null) {
+                    respondWithHttpError(res, 404, "GET failed: no player with requested id available");
+                } else {
+                    console.log('GET successful: returning player with id ' + playerId);
+                    res.json(player);
+                }
+            })
+            .catch(function (err) {
+                respondWithHttpError(res, 500, 'GET failed: Could not find player with id ' + playerId, err);
+            });
+    }
+});
+
+function validateGetPlayerRequest(playerId) {
+    var validationErrorMsg = '';
+    if (!isObjectIdValid(playerId)) {
+        validationErrorMsg += ' playerId is not an ObjectId';
+    }
+    if (validationErrorMsg !== '') {
+        return {
+            valid: false,
+            errormsg: 'GET failed: Validation error - malformed request:' + validationErrorMsg
+        };
+    } else {
+        return {valid: true};
+    }
+}
+
+router.get('/page/:pageIndex', function (req, res, next) {
+    // conversion to int (else type check fails)
+    var pageIndex = parseInt(req.params.pageIndex);
+    var validationResult = validateGetPlayerPageRequest(pageIndex);
+    if (!validationResult.valid) {
+        respondWithHttpError(res, 400, validationResult.errormsg);
+    } else {
+        // TODO: implement returning just a subset of players, currently all players are returned regardless of the pageIndex
         Player.find({}).exec()
             .then(function (players) {
                 if (players.length === 0) {
@@ -100,28 +143,43 @@ router.get('/page/:pageindex', function (req, res, next) {
                     res.json({});
                 }
                 else {
-                    console.log('GET successful: returning players with pageindex ' + pageindex);
+                    console.log('GET successful: returning players with pageIndex ' + pageIndex);
                     res.json(players);
                 }
             })
             .catch(function (err) {
-                respondWithHttpError(res, 500, 'GET failed: Could not retrieve players from page ' + pageindex + ';internal error', err);
+                respondWithHttpError(res, 500, 'GET failed: Could not retrieve players from page ' + pageIndex, err);
             });
     }
 });
 
-router.delete('/:playerid', function (req, res, next) {
-    // TODO: refactor validation (see post playerid as template)
-    var playerid = req.params.playerid;
-    if (!isObjectIdValid(playerid)) {
-        respondWithHttpError(res, 400, 'DELETE failed: malformed id');
+function validateGetPlayerPageRequest(pageIndex) {
+    var validationErrorMsg = '';
+    if (typeof pageIndex !== 'number') {
+        validationErrorMsg += ' pageIndex is not a number';
+    }
+    if (validationErrorMsg !== '') {
+        return {
+            valid: false,
+            errormsg: 'GET failed: Validation error - malformed request:' + validationErrorMsg
+        };
     } else {
-        Player.findByIdAndRemove(playerid).exec()
+        return {valid: true};
+    }
+}
+
+router.delete('/:playerId', function (req, res, next) {
+    var playerId = req.params.playerId;
+    var validationResult = validateDeletePlayerRequest(playerId);
+    if (!validationResult.valid) {
+        respondWithHttpError(res, 400, validationResult.errormsg);
+    } else {
+        Player.findByIdAndRemove(playerId).exec()
             .then(function (player) {
                 if (player === null) {
                     respondWithHttpError(res, 404, "DELETE failed: no player with requested id available");
                 } else {
-                    console.log('DELETE successful:  player with id ' + playerid + ' deleted!');
+                    console.log('DELETE successful:  player with id ' + playerId + ' deleted!');
                     res.json(player);
                 }
             })
@@ -131,6 +189,21 @@ router.delete('/:playerid', function (req, res, next) {
     }
 });
 
+function validateDeletePlayerRequest(playerId) {
+    var validationErrorMsg = '';
+    if (!isObjectIdValid(playerId)) {
+        validationErrorMsg += ' playerId is not an ObjectId';
+    }
+    if (validationErrorMsg !== '') {
+        return {
+            valid: false,
+            errormsg: 'DELETE failed: Validation error - malformed request:' + validationErrorMsg
+        };
+    } else {
+        return {valid: true};
+    }
+}
+
 function isObjectIdValid(id) {
     return mongoose.Types.ObjectId.isValid(id);
 }
@@ -138,7 +211,7 @@ function isObjectIdValid(id) {
 function respondWithHttpError(res, errorcode, msg, err) {
     var completeMsg = msg;
     if (err !== undefined) {
-        completeMsg += err;
+        completeMsg += '; internal error: ' + err;
     }
     console.log(completeMsg);
     res.status(errorcode).send(msg);
